@@ -38,24 +38,31 @@ def fitness_fun(playlist):
     return len(playlist)
 
 
-def main(in_filename="data/data.txt", out_filename="res/res.txt"):
-    db = []
-    tempo_dict = dict()
-    key_dict = dict()
-
+def get_db(in_filename, db, **kwargs):
     with open(in_filename) as f:
         f.readline()
         for line in f.readlines():
             s = Song(*line.strip().split(','))
             db.append(s)
-            if tempo_dict.get(s.tempo) is None:
-                tempo_dict[s.tempo] = [s]
-            else:
-                tempo_dict[s.tempo].append(s)
-            if key_dict.get(s.key) is None:
-                key_dict[s.key] = [s]
-            else:
-                key_dict[s.key].append(s)
+            if "id_dict" in kwargs:
+                kwargs["id_dict"][s.id] = s
+            if "tempo_dict" in kwargs:
+                if kwargs["tempo_dict"].get(s.tempo) is None:
+                    kwargs["tempo_dict"][s.tempo] = [s]
+                else:
+                    kwargs["tempo_dict"][s.tempo].append(s)
+            if "key_dict" in kwargs:
+                if kwargs["key_dict"].get(s.key) is None:
+                    kwargs["key_dict"][s.key] = [s]
+                else:
+                    kwargs["key_dict"][s.key].append(s)
+
+
+def main(in_filename="data/data.txt", out_filename="res/res.txt"):
+    db = []
+    tempo_dict = {}
+    key_dict = {}
+    get_db(in_filename, db, tempo_dict=tempo_dict, key_dict=key_dict)
 
     with open(out_filename, "r+") as f:
         _res = f.readline().strip().split(',')
