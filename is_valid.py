@@ -3,6 +3,9 @@ from main import get_db
 
 
 def is_valid(playlist, id_dict):
+    if len(playlist) != len(set(playlist)):
+        return False
+
     for i in range(len(playlist)-1):
         if i % 2 == 0:
             if id_dict[playlist[i]].tempo != id_dict[playlist[i+1]].tempo:

@@ -1,11 +1,22 @@
+import os
 import sys
 import random
 
 
-def main(in_filename="data/data.txt", factor=10):
+def main(in_filename="data/data.txt", factor=8):
+    res = set()
+    for filename in os.listdir("res/useful/"):
+        f = open(os.path.join("res/useful/", filename))
+        res.update(f.readline().strip().split(','))
+    db = []
     with open(in_filename) as f:
         header = f.readline()
-        db = [line.strip() for line in f.readlines()]
+        for line in f.readlines():
+            line = line.strip()
+            if line.split(',')[0] in res:
+                continue
+            db.append(line)
+        # db = [line.strip() for line in f.readlines()]
     random.shuffle(db)
 
     step = int(len(db) / factor)
