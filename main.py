@@ -70,7 +70,7 @@ def main(in_filename="data/data.txt", out_filename="res/res.txt"):
         if fitness_fun(res) > fitness_fun(_res):
             f.seek(0)
             f.truncate()
-            f.write(",".join(str(r) for r in res))
+            f.write(",".join(str(r.id) for r in res))
             print(len(res))
 
 

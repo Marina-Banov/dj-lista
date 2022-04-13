@@ -2,16 +2,14 @@ import os
 
 
 def main():
-    output_dir = "res/useful/"
+    output_dir = "res/"
     res = 0
     for filename in os.listdir(output_dir):
-        # if len(filename) < len("res56.txt"):
-        #    continue
-        # if filename != "res1546_.txt":
-        #    continue
+        if filename != "res.txt":
+            continue
 
-        f = open(os.path.join(output_dir, filename))
-        len_f = len(f.readline().strip().split(','))
+        with open(os.path.join(output_dir, filename)) as f:
+            len_f = len(f.readline().strip().split(','))
         res += len_f
         print(filename, len_f)
     print(res)

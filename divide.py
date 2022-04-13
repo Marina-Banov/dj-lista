@@ -5,8 +5,9 @@ import random
 
 def main(in_filename="data/data.txt", factor=8):
     res = set()
-    for filename in os.listdir("res/useful/"):
-        f = open(os.path.join("res/useful/", filename))
+    # for filename in os.listdir("res/useful/"):
+    # with open(os.path.join("res/useful/", filename)) as f:
+    with open("res/res.txt") as f:
         res.update(f.readline().strip().split(','))
     db = []
     with open(in_filename) as f:

@@ -2,7 +2,7 @@ import sys
 from main import get_db
 
 
-def main(in_filename="data/data.txt", out_filename="res/res.txt"):
+def main(out_filename="res/res.txt", in_filename="data/data.txt"):
     with open(out_filename) as f:
         line = f.readline().strip().split(',')
         a, b = line[0], line[-1]
@@ -15,5 +15,7 @@ def main(in_filename="data/data.txt", out_filename="res/res.txt"):
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         main(sys.argv[1], sys.argv[2])
+    elif len(sys.argv) > 1:
+        main(sys.argv[1])
     else:
         main()
