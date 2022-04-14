@@ -3,6 +3,26 @@ import random
 from song import Song
 
 
+def get_new_element(last, by_tempo, tempo_dict, key_dict):
+    last = random.choice(
+        tempo_dict[last.tempo] if by_tempo else key_dict[last.key]
+    )
+
+    tempo_dict[last.tempo].remove(last)
+    if len(tempo_dict[last.tempo]) == 1:
+        s = tempo_dict[last.tempo][0]
+        key_dict[s.key].remove(s)
+        del tempo_dict[last.tempo]
+
+    key_dict[last.key].remove(last)
+    if len(key_dict[last.key]) == 1:
+        s = key_dict[last.key][0]
+        tempo_dict[s.tempo].remove(s)
+        del key_dict[last.key]
+
+    return last
+
+
 def generate_random_playlist(first, tempo_dict, key_dict):
     tempo_dict[first.tempo].remove(first)
     key_dict[first.key].remove(first)
@@ -16,15 +36,11 @@ def generate_random_playlist(first, tempo_dict, key_dict):
 
         if i % 2:
             if len(tempo_dict[last.tempo]) > 0:
-                last = random.choice(tempo_dict[last.tempo])
-                tempo_dict[last.tempo].remove(last)
-                key_dict[last.key].remove(last)
+                last = get_new_element(last, True, tempo_dict, key_dict)
                 playlist.append(last)
                 added = True
         elif len(key_dict[last.key]) > 0:
-            last = random.choice(key_dict[last.key])
-            tempo_dict[last.tempo].remove(last)
-            key_dict[last.key].remove(last)
+            last = get_new_element(last, False, tempo_dict, key_dict)
             playlist.append(last)
             added = True
 
