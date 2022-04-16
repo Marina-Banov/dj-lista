@@ -9,13 +9,14 @@ def get_new_element(last, by_tempo, tempo_dict, key_dict):
     )
 
     tempo_dict[last.tempo].remove(last)
-    if len(tempo_dict[last.tempo]) == 1:
-        s = tempo_dict[last.tempo][0]
-        key_dict[s.key].remove(s)
-        del tempo_dict[last.tempo]
-
+    # TODO is this maybe necessary?
+    # if len(tempo_dict[last.tempo]) == 1:
+    #     s = tempo_dict[last.tempo][0]
+    #     key_dict[s.key].remove(s)
+    #     del tempo_dict[last.tempo]
     key_dict[last.key].remove(last)
-    if len(key_dict[last.key]) == 1:
+
+    if len(key_dict[last.key]) == 1 and not by_tempo:
         s = key_dict[last.key][0]
         tempo_dict[s.tempo].remove(s)
         del key_dict[last.key]
@@ -31,23 +32,20 @@ def generate_random_playlist(first, tempo_dict, key_dict):
     i = 0
 
     while True:
-        added = False
         i += 1
 
         if i % 2:
-            if len(tempo_dict[last.tempo]) > 0:
+            if tempo_dict.get(last.tempo):
                 last = get_new_element(last, True, tempo_dict, key_dict)
                 playlist.append(last)
-                added = True
-        elif len(key_dict[last.key]) > 0:
-            last = get_new_element(last, False, tempo_dict, key_dict)
-            playlist.append(last)
-            added = True
-
-        if not added:
-            break
-
-    return playlist
+            else:
+                return playlist
+        else:
+            if key_dict.get(last.key):
+                last = get_new_element(last, False, tempo_dict, key_dict)
+                playlist.append(last)
+            else:
+                return playlist
 
 
 def fitness_fun(playlist):
@@ -74,20 +72,57 @@ def get_db(in_filename, db, **kwargs):
                     kwargs["key_dict"][s.key].append(s)
 
 
-def main(in_filename="data/data.txt", out_filename="res/res.txt"):
-    db = []
-    tempo_dict = {}
-    key_dict = {}
-    get_db(in_filename, db, tempo_dict=tempo_dict, key_dict=key_dict)
+def main(in_filename="../data/data.txt",
+         bpm_file="../data/large_bpm.txt",
+         out_filename="../res/large_bpm.txt"):
+    with open(bpm_file) as f:
+        tempos = [line.strip() for line in f.readlines()]
 
-    with open(out_filename, "r+") as f:
-        _res = f.readline().strip().split(',')
-        res = generate_random_playlist(random.choice(db), tempo_dict, key_dict)
-        if fitness_fun(res) > fitness_fun(_res):
-            f.seek(0)
-            f.truncate()
-            f.write(",".join(str(r.id) for r in res))
-            print(len(res))
+    db = []
+    get_db(in_filename, db)
+    tot_len = 0
+    tot_res = 0
+
+    for t in tempos:
+        key, value = t.split(": ")
+        key = float(key)
+        value = list(map(int, value[1:len(value)-1].split(', ')))
+
+        key_dict = {}
+        for v in range(len(value)):
+            s = db[value[v]]
+            value[v] = s
+            if key_dict.get(s.key) is None:
+                key_dict[s.key] = [s]
+            else:
+                key_dict[s.key].append(s)
+
+        tempo_dict = {key: value}
+        len_ = len(tempo_dict[key])
+        tot_len += len_
+        if len_ == 2:
+            tot_res += 2
+            with open(out_filename, 'a') as f:
+                f.write(f"{key}: {value}\n")
+            continue
+
+        for k in key_dict.copy():
+            if len(key_dict[k]) == 1:
+                tempo_dict[key].remove(key_dict[k][0])
+                del key_dict[k]
+
+        if len(tempo_dict[key]) == 0:
+            continue
+
+        first = random.choice(tempo_dict[key])
+        res = generate_random_playlist(first, tempo_dict, key_dict)
+        if len(res) % 2:
+            res.pop()
+        tot_res += len(res)
+        with open(out_filename, 'a') as f:
+            f.write(f"{key}: {res}\n")
+
+    print(f"{tot_res}/{tot_len}")
 
 
 if __name__ == "__main__":
