@@ -18,7 +18,7 @@ def is_valid(playlist, id_dict):
     return True
 
 
-def main(res_file="res/res.txt", input_files=["data/data.txt"]):
+def main(res_file="../res/res.txt", input_files=["../data/data.txt"]):
     res = list(map(int, open(res_file).readline().strip().split(',')))
     id_dict = {}
     for f in input_files:
@@ -29,5 +29,7 @@ def main(res_file="res/res.txt", input_files=["data/data.txt"]):
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         main(sys.argv[1], sys.argv[2:])
+    elif len(sys.argv) > 1:
+        main(sys.argv[1])
     else:
         main()

@@ -89,8 +89,51 @@ def main(input_f1, input_f2, output_f, data_files=["data/data.txt"]):
             f.write(",".join(str(r) for r in res))
 
 
+def main2(data_file="../data/data.txt",
+          bpm_file="../res/bpm2.txt",
+          res_file="../res/res2.txt"):
+    with open(bpm_file) as f:
+        tempos = [line.strip() for line in f.readlines()]
+
+    db = []
+    get_db(data_file, db)
+
+    res = []
+    leftovers = []
+    for t in tempos:
+        key, value = t.split(": ")
+        value = list(map(int, value[1:len(value) - 1].split(', ')))
+
+        if len(res) == 0 or db[value[0]].key == db[res[-1]].key:
+            res.extend(value)
+            continue
+
+        leftovers.append(value)
+
+    while True:
+        changed = False
+        for i in leftovers:
+            if db[i[0]].key == db[res[-1]].key:
+                res.extend(i)
+                leftovers.remove(i)
+                changed = True
+                break
+            elif db[i[-1]].key == db[res[-1]].key:
+                res.extend(i[::-1])
+                leftovers.remove(i)
+                changed = True
+                break
+        if not changed:
+            break
+
+    print(len(res), len(leftovers))
+    with open(res_file, "w+") as f:
+        f.write(",".join(str(r) for r in res))
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 3:
-        main(sys.argv[1], sys.argv[2], sys.argv[3])
-    else:
-        print("Not enough params. Define two input files and one output file.")
+    # if len(sys.argv) > 3:
+    #     main(sys.argv[1], sys.argv[2], sys.argv[3])
+    # else:
+    #     print("Not enough params. Define two input files and one output file.")
+    main2()
