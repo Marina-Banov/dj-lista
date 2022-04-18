@@ -1,6 +1,9 @@
 import sys
 import random
-from song import Song
+from utils import get_db, DATA_FILE, is_valid
+
+RES_FILE = "../res/res.txt"
+MERGING_KEY = "3B"
 
 
 def get_new_element(last, by_tempo, tempo_dict, key_dict):
@@ -46,88 +49,99 @@ def generate_random_playlist(first, tempo_dict, key_dict):
                 return playlist
 
 
-def fitness_fun(playlist):
-    return len(playlist)
+def merge(list_pieces, db):
+    res = []
+    unmatched = []
+    for i in list_pieces:
+        if len(res) == 0 or db[i[0]].key == db[res[-1]].key:
+            res.extend(i)
+        else:
+            unmatched.append(i)
+
+    while True:
+        changed = False
+        for i in unmatched:
+            if db[i[0]].key == db[res[-1]].key:
+                res.extend(i)
+                changed = True
+            elif db[i[-1]].key == db[res[-1]].key:
+                res.extend(i[::-1])
+                changed = True
+            elif db[i[0]].key == db[res[0]].key:
+                res = i[::-1] + res
+                changed = True
+            elif db[i[-1]].key == db[res[0]].key:
+                res = i + res
+                changed = True
+            if changed:
+                unmatched.remove(i)
+                break
+        if not changed:
+            break
+
+    return res
 
 
-def get_db(in_filename, db, **kwargs):
-    with open(in_filename) as f:
-        f.readline()
-        for line in f.readlines():
-            s = Song(*line.strip().split(','))
-            db.append(s)
-            if "id_dict" in kwargs:
-                kwargs["id_dict"][s.id] = s
-            if "tempo_dict" in kwargs:
-                if kwargs["tempo_dict"].get(s.tempo) is None:
-                    kwargs["tempo_dict"][s.tempo] = [s]
-                else:
-                    kwargs["tempo_dict"][s.tempo].append(s)
-            if "key_dict" in kwargs:
-                if kwargs["key_dict"].get(s.key) is None:
-                    kwargs["key_dict"][s.key] = [s]
-                else:
-                    kwargs["key_dict"][s.key].append(s)
+def get_list_pieces(tempo_dict):
+    tempo_dict_copy = tempo_dict.copy()
+    list_pieces = []
+    res_len = 0
 
-
-def main(in_filename="../data/data.txt",
-         bpm_file="../data/bpm.txt",
-         out_filename="../res/bpm2.txt"):
-    with open(bpm_file) as f:
-        tempos = [line.strip() for line in f.readlines()]
-
-    db = []
-    get_db(in_filename, db)
-    tot_len = 0
-    tot_res = 0
-
-    for t in tempos:
-        key, value = t.split(": ")
-        key = float(key)
-        value = list(map(int, value[1:len(value)-1].split(', ')))
-
-        key_dict = {}
-        for v in range(len(value)):
-            s = db[value[v]]
-            value[v] = s
-            if key_dict.get(s.key) is None:
-                key_dict[s.key] = [s]
-            else:
-                key_dict[s.key].append(s)
-
-        tempo_dict = {key: value}
-        len_ = len(tempo_dict[key])
-        tot_len += len_
-        if len_ == 2:
-            tot_res += 2
-            with open(out_filename, 'a') as f:
-                f.write(f"{key}: {value}\n")
-            continue
-
-        for k in key_dict.copy():
-            if len(key_dict[k]) == 1:
-                tempo_dict[key].remove(key_dict[k][0])
-                del key_dict[k]
-
-        if len(tempo_dict[key]) == 0:
+    for key, value in tempo_dict_copy.items():
+        if len(value) == 1:
             continue
 
         if len(tempo_dict[key]) == 2:
-            tot_res += 2
-            with open(out_filename, 'a') as f:
-                f.write(f"{key}: {tempo_dict[key]}\n")
+            list_pieces.append([value[0].id, value[1].id])
+            res_len += 2
             continue
 
-        if key_dict.get("3B") and len(key_dict["3B"]) >= 1:
-            first = random.choice(key_dict["3B"])
+        # TODO why is this so uch slower than reading from files?
+        # print(f"{len(list_pieces)}/{len(tempo_dict.keys())}")
+        key_dict = {}
+        for v in value:
+            if key_dict.get(v.key) is None:
+                key_dict[v.key] = [v]
+            else:
+                key_dict[v.key].append(v)
+
+        for k in key_dict.copy():
+            if len(key_dict[k]) == 1:
+                tempo_dict_copy[key].remove(key_dict[k][0])
+                del key_dict[k]
+
+        if len(tempo_dict_copy[key]) == 0:
+            with_key = [s for s in tempo_dict[key] if s.key == MERGING_KEY]
+            if len(with_key) == 1:
+                r = random.choice(tempo_dict[key])
+                while r == with_key[0]:
+                    r = random.choice(tempo_dict[key])
+                list_pieces.append([with_key[0].id, r.id])
+            else:
+                try:
+                    r = random.sample(tempo_dict[key], 2)
+                    list_pieces.append([r[0].id, r[1].id])
+                except ValueError:  # TODO
+                    continue
+            res_len += 2
+            continue
+
+        if len(tempo_dict_copy[key]) == 2:
+            list_pieces.append([tempo_dict_copy[key][0].id,
+                                tempo_dict_copy[key][1].id])
+            res_len += 2
+            continue
+
+        if key_dict.get(MERGING_KEY) and len(key_dict[MERGING_KEY]) >= 1:
+            first = random.choice(key_dict[MERGING_KEY])
         else:
             first = random.choice(tempo_dict[key])
 
         tempo_dict[first.tempo].remove(first)
         key_dict[first.key].remove(first)
 
-        if key_dict.get("3B") and len(key_dict["3B"]) >= 1:
-            last = random.choice(key_dict["3B"])
+        if key_dict.get(MERGING_KEY) and len(key_dict[MERGING_KEY]) >= 1:
+            last = random.choice(key_dict[MERGING_KEY])
             tempo_dict[last.tempo].remove(last)
             key_dict[last.key].remove(last)
         else:
@@ -140,15 +154,31 @@ def main(in_filename="../data/data.txt",
         if last:
             res = res[:-1] + [last]
 
-        tot_res += len(res)
-        with open(out_filename, 'a') as f:
-            f.write(f"{key}: {res}\n")
+        list_pieces.append([r.id for r in res])
+        res_len += len(res)
 
-    print(f"{tot_res}/{tot_len}")
+    return list_pieces, res_len
+
+
+def main(out_filename=RES_FILE):
+    db = []
+    tempo_dict = {}
+    print("Reading database...")
+    get_db(DATA_FILE, db, tempo_dict=tempo_dict)
+    print("Getting list pieces...")
+    list_pieces, res_len = get_list_pieces(tempo_dict)
+    print("Merging...")
+    res = merge(list_pieces, db)
+    if not is_valid(res, db):
+        print("Something went wrong!")
+        return
+    print(f"Successfully matched {len(res)}/{res_len} elements.")
+    with open(out_filename, "w+") as f:
+        f.write(",".join(str(r) for r in res))
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 2:
-        main(sys.argv[1], sys.argv[2])
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
     else:
         main()
