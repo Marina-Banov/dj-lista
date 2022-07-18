@@ -1,7 +1,11 @@
 # DJ lista
 
-Podijeliti bazu podataka na više manjih:
- - tako da za svaku manju bazu vrijedi ista distribucija podataka kao i za originalnu ILI
+Rješenje za problem [Dobitne kombinacije](https://xfer.hr/natjecanje/index.php).
+
+### Bilješke
+
+Podijeliti zadanu listu na više manjih:
+ - tako da za svaku manju listu vrijedi ista distribucija podataka kao i za originalnu ILI
  - grupiranjem BPM-ova (grupe BPM-ova bi trebale ukupno imati otprilike jednak broj pjesama) ILI
  - podijeliti po BPM-u (+ po potrebi unutar grupe tako da distribucija ključeva bude uniformna).
 
